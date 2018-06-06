@@ -1,24 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <com.wordplat.ikvstockchart.InteractiveKLineView
-        android:id="@+id/kLineView"
+    <FrameLayout
+        android:id="@+id/fl_kline"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:yLabelAlign="right"
-        app:xMarkerAlign="bottom"
-        app:yMarkerAlign="left"
-        app:decreasingStyle="stroke"/>
-    <Button
-        android:onClick="onClick"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="切屏"
-        android:textSize="25sp"
-        android:background="#66000000"/>
-</RelativeLayout>
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.wordplat.ikvstockchart.InteractiveKLineView
+            android:id="@+id/kLine"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:decreasingStyle="stroke"
+            app:xMarkerAlign="bottom"
+            app:yLabelAlign="right"
+            app:yMarkerAlign="left" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#66000000"
+            android:onClick="onClick"
+            android:text="切屏"
+            android:textSize="25sp" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_test"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:gravity="center"
+        android:text="这是个占位的view"
+        android:textSize="20sp" />
+
+</LinearLayout>
