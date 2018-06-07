@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.RectF;
+import android.util.Log;
 import android.view.animation.LinearInterpolator;
 
 import com.wordplat.ikvstockchart.drawing.CandleDrawing;
@@ -44,9 +45,9 @@ import java.util.List;
 
 public class KLineRender extends AbstractRender {
     private static final String TAG = "KLineRender";
-
-    private static final float ZOOM_IN_FACTOR = 1.4f;
-    private static final float ZOOM_OUT_FACTOR = 0.7f;
+    private static final boolean DEBUG = true;
+    private static final float ZOOM_IN_FACTOR = 1.4f;//放大倍率
+    private static final float ZOOM_OUT_FACTOR = 0.7f;//缩小倍率
     private static final int ZOOM_DURATION = 1000;
 
     private static final float LANDSCAPE_PORTRAIT_FACTOR = 1.8235294f;
@@ -63,7 +64,7 @@ public class KLineRender extends AbstractRender {
     private int currentVisibleCount = -1;
 
     /**
-     * 竖屏时各级别缩放下显示的 entry 数量
+     * 竖屏时各级别缩放下显示的 entry 数量，7=最多放大位数+最多缩小位数+1
      */
     private int[] portraitVisibleCountBuffer = new int[7];
 
@@ -89,6 +90,7 @@ public class KLineRender extends AbstractRender {
      */
     private int zoomOutTimes = 3;
 
+    private int maxZoomTimes = 0;//缩放级别总数
     /**
      * 缩放动画
      */
@@ -226,8 +228,9 @@ public class KLineRender extends AbstractRender {
     @Override
     public void zoomIn(float x, float y) {
         if (entrySet.getEntryList().size() == 0) {
-            return ;
+            return;
         }
+//        Log.d(TAG, "zoomIn：" + zoomTimes);
         final int visibleCount = getCurrentVisibleCount(++zoomTimes);
 
         if (visibleCount != -1) {
@@ -248,7 +251,7 @@ public class KLineRender extends AbstractRender {
     @Override
     public void zoomOut(float x, float y) {
         if (entrySet.getEntryList().size() == 0) {
-            return ;
+            return;
         }
         final int visibleCount = getCurrentVisibleCount(--zoomTimes);
 
@@ -258,6 +261,32 @@ public class KLineRender extends AbstractRender {
             zoom(kLineRect, currentVisibleCount, x, y);
         } else {
             zoomTimes = -zoomInTimes;
+        }
+    }
+
+    @Override
+    public void zoomIn(float x, float y, float scaleFactor) {
+        if (entrySet.getEntryList().size() == 0) {
+            return;
+        }
+        final int visibleCount = getZoomVisibleCount(scaleFactor);
+        if (visibleCount != -1) {
+            currentVisibleCount = visibleCount;
+            zoom(kLineRect, currentVisibleCount, x, y);
+        }
+    }
+
+    @Override
+    public void zoomOut(float x, float y, float scaleFactor) {
+        if (entrySet.getEntryList().size() == 0) {
+            return;
+        }
+        final int visibleCount = getZoomVisibleCount(scaleFactor);
+
+        if (visibleCount != -1) {
+            currentVisibleCount = visibleCount;
+
+            zoom(kLineRect, currentVisibleCount, x, y);
         }
     }
 
@@ -311,7 +340,7 @@ public class KLineRender extends AbstractRender {
     }
 
     private void renderDrawingList(Canvas canvas, List<IDrawing> drawingList, float minY, float maxY) {
-        for (int i = minVisibleIndex ; i < maxVisibleIndex ; i++) {
+        for (int i = minVisibleIndex; i < maxVisibleIndex; i++) {
             for (IDrawing drawing : drawingList) {
                 drawing.computePoint(minVisibleIndex, maxVisibleIndex, i);
             }
@@ -332,7 +361,7 @@ public class KLineRender extends AbstractRender {
     private void computeVisibleCount() {
         zoomInTimes = Math.abs(sizeColor.getZoomInTimes() == 0 ? 3 : sizeColor.getZoomInTimes());
         zoomOutTimes = Math.abs(sizeColor.getZoomOutTimes() == 0 ? 3 : sizeColor.getZoomOutTimes());
-        final int maxZoomTimes = zoomInTimes + zoomOutTimes + 1;
+        maxZoomTimes = zoomInTimes + zoomOutTimes + 1;
 
         if (portraitVisibleCountBuffer.length < maxZoomTimes) {
             portraitVisibleCountBuffer = new int[maxZoomTimes];
@@ -341,13 +370,21 @@ public class KLineRender extends AbstractRender {
         if (currentVisibleCount == -1) {
             currentVisibleCount = sizeColor.getPortraitDefaultVisibleCount();
             portraitVisibleCountBuffer[zoomOutTimes] = currentVisibleCount;
+            //3
 
-            for (int i = zoomInTimes ; i > 0 ; i--) {
+            //下标012，i值321
+            for (int i = zoomInTimes; i > 0; i--) {
                 portraitVisibleCountBuffer[zoomOutTimes - i] = getZoomOutVisibleCount(currentVisibleCount, i);
             }
-
-            for (int i = zoomOutTimes ; i > 0 ; i--) {
+            //下标654，i值321
+            for (int i = zoomOutTimes; i > 0; i--) {
                 portraitVisibleCountBuffer[zoomOutTimes + i] = getZoomInVisibleCount(currentVisibleCount, i);
+            }
+            //最后计算出来的范围从大到小，即从缩小到放大
+            if (DEBUG) {
+                for (int i : portraitVisibleCountBuffer) {
+                    Log.d(TAG, "七级缩放范围：" + i);
+                }
             }
         }
 
@@ -357,7 +394,7 @@ public class KLineRender extends AbstractRender {
                 landscapeVisibleCountBuffer = new int[maxZoomTimes];
             }
 
-            for (int i = 0 ; i <= zoomOutTimes + zoomInTimes ; i++) {
+            for (int i = 0; i <= zoomOutTimes + zoomInTimes; i++) {
                 landscapeVisibleCountBuffer[i] = (int) (portraitVisibleCountBuffer[i] * LANDSCAPE_PORTRAIT_FACTOR);
             }
 
@@ -386,6 +423,7 @@ public class KLineRender extends AbstractRender {
         postMatrixValue(kLineRect.width(), kLineRect.height(), extremumY[0], extremumY[1]);
     }
 
+    //判断
     private int getCurrentVisibleCount(int zoomTimes) {
         final int index = zoomOutTimes + zoomTimes;
         if (0 <= index && index <= zoomOutTimes + zoomInTimes) {
@@ -398,6 +436,7 @@ public class KLineRender extends AbstractRender {
         return -1;
     }
 
+    //放大可见数据
     private int getZoomInVisibleCount(int currentVisibleCount, int nZoomInTimes) {
         if (nZoomInTimes > 1) {
             return (int) (getZoomInVisibleCount(currentVisibleCount, nZoomInTimes - 1) / ZOOM_IN_FACTOR) + 1;
@@ -406,11 +445,71 @@ public class KLineRender extends AbstractRender {
         }
     }
 
+    //缩小可见数据
     private int getZoomOutVisibleCount(int currentVisibleCount, int nZoomOutTimes) {
         if (nZoomOutTimes > 1) {
             return (int) (getZoomOutVisibleCount(currentVisibleCount, nZoomOutTimes - 1) / ZOOM_OUT_FACTOR) + 1;
         } else {
             return (int) (currentVisibleCount / ZOOM_OUT_FACTOR) + 1;
         }
+    }
+
+    //可见数据,用于双指缩放
+    private int getZoomVisibleCount(float scaleFactor) {
+        int result;
+        //当前已是最大缩放率不能再放大
+        if (currentVisibleCount >= getCurrentVisibleCount(-zoomInTimes) && scaleFactor < 1) {
+            return -1;
+        }
+        //当前已是最小缩放率不能再缩小
+        if (currentVisibleCount <= getCurrentVisibleCount(zoomInTimes) && scaleFactor > 1) {
+            return -1;
+        }
+        //缩放比率为0，这肯定有问题了返回正常级别的可见范围
+        if (scaleFactor <= 0) {
+            return getCurrentVisibleCount(0);
+        }
+
+        result = (int) (currentVisibleCount / scaleFactor) + 1;
+
+        //计算后的数值大于七个级别中的最大数值则返回级别里的最大值
+        if (result >= getCurrentVisibleCount(-zoomInTimes)) {
+            return getCurrentVisibleCount(-zoomInTimes);
+        }
+        //计算后的数值小于七个级别中的最小数值则返回级别里的最小值
+        if (result <= getCurrentVisibleCount(zoomInTimes)) {
+            return getCurrentVisibleCount(zoomInTimes);
+        }
+        //设置双指缩放后的当前缩放等级，为了配合双击放大效果
+        setZoomTimes(getZoomTimesByNearValue(result));
+        if (DEBUG) {
+            Log.d(TAG, "当前显示数量：" + currentVisibleCount + "   缩放率：" + scaleFactor + "  结果：" + result + "  接近级别：" + portraitVisibleCountBuffer[getZoomTimesByNearValue(result) + 3] + " 级别：" + zoomTimes);
+        }
+        return result;
+    }
+
+    //根据显示范围获取与之相近的缩放等级
+    private int getZoomTimesByNearValue(int visibleCount) {
+        List<Integer> dValue = new ArrayList<>();
+        int[] temp;
+        if (context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            temp = landscapeVisibleCountBuffer.clone();
+        } else {
+            temp = portraitVisibleCountBuffer.clone();
+        }
+        for (int value : temp) {
+            dValue.add(Math.abs(value - visibleCount));
+        }
+        int minValue = Integer.MAX_VALUE, index = -1;
+        for (int i = 0; i < dValue.size(); i++) {
+            if (minValue > dValue.get(i)) {
+                minValue = dValue.get(i);
+                index = i;
+            }
+        }
+        if (index != -1) {
+            return index - zoomInTimes;
+        }
+        return zoomInTimes;
     }
 }

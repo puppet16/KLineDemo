@@ -5,6 +5,13 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <TextView
+        android:id="@+id/tv_test"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:gravity="center"
+        android:text="这是个占位的view"
+        android:textSize="20sp" />
     <FrameLayout
         android:id="@+id/fl_kline"
         android:layout_width="match_parent"
@@ -28,13 +35,4 @@
             android:text="切屏"
             android:textSize="25sp" />
     </FrameLayout>
-
-    <TextView
-        android:id="@+id/tv_test"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:gravity="center"
-        android:text="这是个占位的view"
-        android:textSize="20sp" />
-
 </LinearLayout>

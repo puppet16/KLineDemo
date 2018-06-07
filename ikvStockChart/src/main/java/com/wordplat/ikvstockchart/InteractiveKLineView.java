@@ -33,11 +33,11 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.animation.Interpolator;
 
+import com.wordplat.ikvstockchart.compat.GestureMoveActionCompat;
 import com.wordplat.ikvstockchart.compat.ViewUtils;
 import com.wordplat.ikvstockchart.entry.Entry;
 import com.wordplat.ikvstockchart.entry.EntrySet;
 import com.wordplat.ikvstockchart.entry.StockDataTest;
-import com.wordplat.ikvstockchart.compat.GestureMoveActionCompat;
 import com.wordplat.ikvstockchart.render.AbstractRender;
 import com.wordplat.ikvstockchart.render.KLineRender;
 
@@ -47,7 +47,7 @@ import com.wordplat.ikvstockchart.render.KLineRender;
 
 public class InteractiveKLineView extends View {
     private static final String TAG = "InteractiveKLineView";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     // 与视图大小相关的属性
     private final RectF viewRect;
@@ -215,17 +215,33 @@ public class InteractiveKLineView extends View {
         }
     });
 
+    //手势缩放
     private final ScaleGestureDetector scaleDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
         @Override
-        public void onScaleEnd(ScaleGestureDetector detector) {
+        public boolean onScale(ScaleGestureDetector detector) {
             float f = detector.getScaleFactor();
+            Log.d(TAG, "getScaleFactor:onScale：" + f);
 
             if (f < 1.0f) {
-                render.zoomOut(detector.getFocusX(), detector.getFocusY());
+                render.zoomOut(detector.getFocusX(), detector.getFocusY(), f);
             } else if (f > 1.0f) {
-                render.zoomIn(detector.getFocusX(), detector.getFocusY());
+                render.zoomIn(detector.getFocusX(), detector.getFocusY(), f);
             }
+            invalidate();
+            return true;
+            //返回true,比率是与前一个的比率，滑动时抖动厉害；返false是与一开始的比率，滑动会很快
         }
+
+//        @Override
+//        public void onScaleEnd(ScaleGestureDetector detector) {
+//            float f = detector.getScaleFactor();
+//            Log.d(TAG,"getScaleFactor:："+f);
+//            if (f < 1.0f) {
+//                render.zoomOut(detector.getFocusX(), detector.getFocusY());
+//            } else if (f > 1.0f) {
+//                render.zoomIn(detector.getFocusX(), detector.getFocusY());
+//            }
+//        }
     });
 
     private GestureMoveActionCompat gestureCompat = new GestureMoveActionCompat(null);
@@ -329,7 +345,7 @@ public class InteractiveKLineView extends View {
     @Override
     public void computeScroll() {
         if (onVerticalMove) {
-            return ;
+            return;
         }
 
         if (scroller.computeScrollOffset()) {

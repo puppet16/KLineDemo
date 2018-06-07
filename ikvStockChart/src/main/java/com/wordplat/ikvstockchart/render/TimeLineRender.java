@@ -106,6 +106,16 @@ public class TimeLineRender extends AbstractRender {
     }
 
     @Override
+    public void zoomIn(float x, float y, float scaleFactor) {
+
+    }
+
+    @Override
+    public void zoomOut(float x, float y, float scaleFactor) {
+
+    }
+
+    @Override
     public void render(Canvas canvas) {
         final int count = entrySet.getEntryList().size();
         final int lastIndex = count - 1;

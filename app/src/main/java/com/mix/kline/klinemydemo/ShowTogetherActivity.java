@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -16,15 +17,15 @@ import android.widget.TextView;
 
 import com.mix.kline.klinemydemo.utils.DensityUtil;
 import com.wordplat.ikvstockchart.InteractiveKLineView;
+import com.wordplat.ikvstockchart.KLineHandler;
 import com.wordplat.ikvstockchart.compat.PerformenceAnalyser;
 import com.wordplat.ikvstockchart.drawing.HighlightDrawing;
 import com.wordplat.ikvstockchart.drawing.KLineVolumeDrawing;
-import com.wordplat.ikvstockchart.drawing.MACDDrawing;
 import com.wordplat.ikvstockchart.drawing.StockIndexYLabelDrawing;
+import com.wordplat.ikvstockchart.entry.Entry;
 import com.wordplat.ikvstockchart.entry.EntrySet;
 import com.wordplat.ikvstockchart.entry.StockDataTest;
 import com.wordplat.ikvstockchart.entry.StockKLineVolumeIndex;
-import com.wordplat.ikvstockchart.entry.StockMACDIndex;
 import com.wordplat.ikvstockchart.marker.XAxisTextMarkerView;
 import com.wordplat.ikvstockchart.marker.YAxisTextMarkerView;
 import com.wordplat.ikvstockchart.render.KLineRender;
@@ -36,7 +37,7 @@ public class ShowTogetherActivity extends AppCompatActivity {
     InteractiveKLineView mKLineView;
     TextView mTvTest;
     FrameLayout mFlView;
-    private KLineRender kLineRender;
+    private KLineRender mKLineRender;
     View mView;
 
     @Override
@@ -45,7 +46,7 @@ public class ShowTogetherActivity extends AppCompatActivity {
         mView = LayoutInflater.from(this).inflate(R.layout.activity_together, null);
         mFlView = mView.findViewById(R.id.fl_kline);
         setContentView(mView);
-        mKLineView = mView.findViewById(R.id.kLine_port);
+        mKLineView = mView.findViewById(R.id.kLine);
         mTvTest = mView.findViewById(R.id.tv_test);
         initUI();
         loadKLineData();
@@ -67,21 +68,21 @@ public class ShowTogetherActivity extends AppCompatActivity {
     private void initUI() {
         mKLineView.setEnableLeftRefresh(false);
         mKLineView.setEnableLeftRefresh(false);
-        kLineRender = (KLineRender) mKLineView.getRender();
+        mKLineRender = (KLineRender) mKLineView.getRender();
 
         final int paddingTop = DensityUtil.dp2px(10);
         final int stockMarkerViewHeight = DensityUtil.dp2px(15);
 
-        // MACD
-        HighlightDrawing macdHighlightDrawing = new HighlightDrawing();
-        macdHighlightDrawing.addMarkerView(new YAxisTextMarkerView(stockMarkerViewHeight));
-
-        StockMACDIndex macdIndex = new StockMACDIndex();
-        macdIndex.addDrawing(new MACDDrawing());
-        macdIndex.addDrawing(new StockIndexYLabelDrawing());
-        macdIndex.addDrawing(macdHighlightDrawing);
-        macdIndex.setPaddingTop(paddingTop);
-        kLineRender.addStockIndex(macdIndex);
+//        // MACD
+//        HighlightDrawing macdHighlightDrawing = new HighlightDrawing();
+//        macdHighlightDrawing.addMarkerView(new YAxisTextMarkerView(stockMarkerViewHeight));
+//
+//        StockMACDIndex macdIndex = new StockMACDIndex();
+//        macdIndex.addDrawing(new MACDDrawing());
+//        macdIndex.addDrawing(new StockIndexYLabelDrawing());
+//        macdIndex.addDrawing(macdHighlightDrawing);
+//        macdIndex.setPaddingTop(paddingTop);
+//        mKLineRender.addStockIndex(macdIndex);
 
         //Volume
         HighlightDrawing volumeHighlightDrawing = new HighlightDrawing();
@@ -92,9 +93,42 @@ public class ShowTogetherActivity extends AppCompatActivity {
         volumeIndex.addDrawing(new StockIndexYLabelDrawing());
         volumeIndex.addDrawing(volumeHighlightDrawing);
         volumeIndex.setPaddingTop(paddingTop);
-        kLineRender.addStockIndex(volumeIndex);
-        kLineRender.addMarkerView(new YAxisTextMarkerView(stockMarkerViewHeight));
-        kLineRender.addMarkerView(new XAxisTextMarkerView(stockMarkerViewHeight));
+        mKLineRender.addStockIndex(volumeIndex);
+        mKLineRender.addMarkerView(new YAxisTextMarkerView(stockMarkerViewHeight));
+        mKLineRender.addMarkerView(new XAxisTextMarkerView(stockMarkerViewHeight));
+        mKLineView.setKLineHandler(new KLineHandler() {
+            @Override
+            public void onLeftRefresh() {
+
+            }
+
+            @Override
+            public void onRightRefresh() {
+
+            }
+
+            @Override
+            public void onSingleTap(MotionEvent e, float x, float y) {
+
+            }
+
+            @Override
+            public void onDoubleTap(MotionEvent e, float x, float y) {
+                if (mKLineRender.getKLineRect().contains(x, y)) {
+                    mKLineRender.zoomIn(x, y);
+                }
+            }
+
+            @Override
+            public void onHighlight(Entry entry, int entryIndex, float x, float y) {
+
+            }
+
+            @Override
+            public void onCancelHighlight() {
+
+            }
+        });
     }
 
     private void loadKLineData() {

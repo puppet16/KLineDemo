@@ -37,7 +37,7 @@ import java.text.DecimalFormat;
 
 public class CandleDrawing implements IDrawing {
     private static final String TAG = "CandleDrawing";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     private Paint candlePaint; // 蜡烛图画笔
     private Paint extremumPaint; // 当前可见区域内的极值画笔
